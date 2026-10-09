@@ -11,10 +11,6 @@ permissions:
 jobs:
   apk:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: p1-app-pc/mobile
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -33,20 +29,25 @@ jobs:
       - name: Work out the versions
         id: v
         run: |
+          cd p1-app-pc/mobile
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then VER="${GITHUB_REF_NAME#v}"; else VER=$(node -p "require('./package.json').version"); fi
           echo "name=$VER" >> "$GITHUB_OUTPUT"
           echo "code=${{ github.run_number }}" >> "$GITHUB_OUTPUT"
           echo "minnative=$(tr -d '[:space:]' < min-native-version-code.txt)" >> "$GITHUB_OUTPUT"
           
       - name: Stamp the web version
-        run: echo '{"version":"${{ steps.v.outputs.name }}"}' > www/bundle-version.json
-        
+        run: |
+          cd p1-app-pc/mobile
+          echo '{"version":"${{ steps.v.outputs.name }}"}' > www/bundle-version.json
+          
       - name: Install web dependencies
-        run: npm install
+        run: |
+          cd p1-app-pc/mobile
+          npm install
 
       - name: Build APK with Gradle
         run: |
-          cd android
+          cd p1-app-pc/mobile/android
           chmod +x gradlew
           ./gradlew assembleDebug
 
