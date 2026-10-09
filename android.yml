@@ -1,0 +1,36 @@
+name: Build Android remote app (APK)
+
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: p1-app-pc/mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Work out the versions
+        id: v
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then VER="${GITHUB_REF_NAME#v}"; else VER=$(node -p "require('./package.json').version"); fi
+          echo "name=$VER" >> "$GITHUB_OUTPUT"
+          echo "code=${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+          echo "minnative=$(tr -d '[:space:]' < min-native-version-code.txt)" >> "$GITHUB_OUTPUT"
+      - name: Stamp the web version
+        run: echo '{"version":"${{ steps.v.outputs.name }}"}' > www/bundle-version.json
+      - name: Install web dependencies
+        run: npm install
